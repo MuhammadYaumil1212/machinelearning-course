@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.dicoding.picodiploma.mycamera.databinding.ActivityResultBinding
+import androidx.core.net.toUri
 
 class ResultActivity : AppCompatActivity() {
 
@@ -21,6 +22,9 @@ class ResultActivity : AppCompatActivity() {
             Log.d("Image URI", "showImage: $it")
             binding.resultImage.setImageURI(it)
         }
+
+        val detectedText = intent.getStringExtra(EXTRA_RESULT)
+        binding.resultText.text = detectedText
 
     }
 

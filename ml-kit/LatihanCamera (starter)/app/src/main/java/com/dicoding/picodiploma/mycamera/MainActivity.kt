@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,7 +14,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.dicoding.picodiploma.mycamera.CameraActivity.Companion.CAMERAX_RESULT
+import com.dicoding.picodiploma.mycamera.ResultActivity.Companion.EXTRA_RESULT
 import com.dicoding.picodiploma.mycamera.databinding.ActivityMainBinding
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.Text
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.TextRecognizer
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
 class MainActivity : AppCompatActivity() {
 
@@ -109,9 +116,30 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun analyzeImage(uri: Uri) {
-        val intent = Intent(this, ResultActivity::class.java)
-        intent.putExtra(ResultActivity.EXTRA_IMAGE_URI, currentImageUri.toString())
-        startActivity(intent)
+        binding.progressIndicator.visibility = View.VISIBLE
+
+        val textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        val inputImage = InputImage.fromFilePath(this,uri);
+
+        textRecognizer.process(inputImage)
+            .addOnSuccessListener { visionText: Text->
+                val detectedText = visionText.text
+                if(detectedText.isNotBlank()){
+                    binding.progressIndicator.visibility = View.GONE
+                    val intent = Intent(this, ResultActivity::class.java)
+                    intent.putExtra(ResultActivity.EXTRA_IMAGE_URI, uri.toString())
+                    intent.putExtra(ResultActivity.EXTRA_RESULT, detectedText)
+                    startActivity(intent)
+                }else{
+                    binding.progressIndicator.visibility = View.GONE
+                    showToast(getString(R.string.no_text_recognized))
+                }
+
+        }
+            .addOnFailureListener {
+                binding.progressIndicator.visibility = View.GONE
+                showToast(it.message.toString())
+        }
     }
 
     private fun showToast(message: String) {
